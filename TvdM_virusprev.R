@@ -582,5 +582,3 @@ for (i in 1:length(multi_virus_data)) {
   
   #dev.off()
 }
-
-##Looking at the number of mosquitoes in each category of virus, week, location eg. the sampling size
