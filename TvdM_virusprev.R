@@ -181,6 +181,9 @@ as.Date(paste(2020, as.numeric(as.character(PA_dat$Week))-1, 1), format = "%Y %W
 PA_dat$PA<-as.factor(PA_dat$PA)
 ifelse(PA_dat$PA == "Yes",1,0)->PA_dat$PA #this should be numeric for the inferPrevalence function I think
 
+##renaming the two locations in Utrecht that are very close to one another as one single location 
+recode(PA_dat$Location, "Utrecht_Eendenkooi" = "Utrecht_Haarzuilens", "Utrecht_Griend" = "Utrecht_Haarzuilens") -> PA_dat$Location
+
 ##Looking at the number of mosquitoes in each category of virus, week, location eg. the sampling size - I think these should probably be added to the plots at a later stage as there's quite some variation
 PA_dat %>% group_by(virus,Location) %>% summarise(totalmosq = sum(Pool_size)) ->samplesize_by_virusloc
 PA_dat %>% group_by(virus,Week) %>% summarise(totalmosq = sum(Pool_size)) ->samplesize_by_virusweek
@@ -266,7 +269,7 @@ for (i in 1:length(viruses[[1]])) {
 glimpse(prev_by_site_list)
 
 #exporting a data table of prevalence and bounds by Site and virus 
-prev_by_site_df<-data.frame(Virus=c(rep.int("AMV",16),rep.int("NEGV",16),rep.int("UMAV",16)),
+prev_by_site_df<-data.frame(Virus=c(rep.int("AMV",15),rep.int("NEGV",15),rep.int("UMAV",15)),
                             Location=c(levels(prev_by_site_list$AMV$Location),levels(prev_by_site_list$NEGV$Location),levels(prev_by_site_list$UMAV$Location)),
                             Prevalence=c(prev_by_site_list$AMV$prevalence,prev_by_site_list$NEGV$prevalence,prev_by_site_list$UMAV$prevalence),
                             Lower_bound=c(prev_by_site_list$AMV$lower_bound,prev_by_site_list$NEGV$lower_bound,prev_by_site_list$UMAV$lower_bound),
@@ -274,7 +277,7 @@ prev_by_site_df<-data.frame(Virus=c(rep.int("AMV",16),rep.int("NEGV",16),rep.int
                             Log_likelihood=c(prev_by_site_list$AMV$log_likelihood,prev_by_site_list$NEGV$log_likelihood,prev_by_site_list$UMAV$log_likelihood),
                             stringsAsFactors = FALSE)
 
-write.csv(prev_by_site_df,file = "TvdM_prev_by_location.csv")
+write.csv(prev_by_site_df,file = "TvdM_prev_by_location2.csv")
 
 #Loop for creating a plot series of prevalence by location for each virus
 ##You should get a barplot for each of the three viruses after this, uncomment the pdf creating bits to have it automatically explort a pdf plot for each one
@@ -282,12 +285,19 @@ write.csv(prev_by_site_df,file = "TvdM_prev_by_location.csv")
 #Make list of viruses in the form you want the title to take...eg. capitalised
 virus_titles<-c("Alphamesonivirus","Negevirus","Umatilla virus") #I guessed at these
 
+#list of short virus titles to index the sample size data
+sh_virus_titles<-c("AMV","NEGV","UMAV")
+
 multi_virus_data<-prev_by_site_list
 
 for (i in 1:length(multi_virus_data)) {
   
   #isolating data for only one virus
   data<-multi_virus_data[[i]]
+  
+  #and sample size data by location for one virus
+  ss_dat<-filter(samplesize_by_virusloc, virus == sh_virus_titles[i])
+  ss_dat<-ss_dat$totalmosq
   
   #preparing the data
   #proportions -> percentages
@@ -308,9 +318,9 @@ for (i in 1:length(multi_virus_data)) {
     
     line_list<-c(1.5,2,3,5,7.5,10,15,20,30,50,75,100)
     
-    #making some fake data so that the whole range is encompassed - doesn't matter that these are not the right names, there just needs to be 16
-    fake_sites<-c("CR","SI","CS","BR","BG","CE","TR","HL","BN","LW","IB","DK","IN","VG","OX","CK")
-    fake_prevalence<-as.numeric(seq(1,100,length.out = 16))
+    #making some fake data so that the whole range is encompassed - doesn't matter that these are not the right names, there just needs to be 15
+    fake_sites<-c("CR","SI","CS","BR","BG","CE","TR","HL","BN","LW","IB","DK","IN","VG","OX")
+    fake_prevalence<-as.numeric(seq(1,100,length.out = 15))
     fake_data<-data.frame(fake_sites,fake_prevalence)
     
     y_axis<-c(1,1.5,2,3,5,7.5,10,15,20,30,50,75,100)
@@ -323,8 +333,8 @@ for (i in 1:length(multi_virus_data)) {
     line_list<-c(0.2,0.3,0.5,1,2,3,5,10,20,30,50,100)
     
     #making some fake data so that the whole range is encompassed
-    fake_sites<-c("CR","SI","CS","BR","BG","CE","TR","HL","BN","LW","IB","DK","IN","VG","OX","CK")
-    fake_prevalence<-as.numeric(seq(0.1,100,length.out = 16))
+    fake_sites<-c("CR","SI","CS","BR","BG","CE","TR","HL","BN","LW","IB","DK","IN","VG","OX")
+    fake_prevalence<-as.numeric(seq(0.1,100,length.out = 15))
     fake_data<-data.frame(fake_sites,fake_prevalence)
     
     y_axis<-c(0.1,0.2,0.3,0.5,1,2,3,5,10,20,30,50,100)
@@ -337,17 +347,17 @@ for (i in 1:length(multi_virus_data)) {
     line_list<-c(0.03,0.05,0.1,0.3,0.5,1,3,5,10,30,50,100)
     
     #making some fake data so that the whole range is encompassed
-    fake_sites<-c("CR","SI","CS","BR","BG","CE","TR","HL","BN","LW","IB","DK","IN","VG","OX","CK")
-    fake_prevalence<-as.numeric(seq(0.01,100,length.out = 16))
+    fake_sites<-c("CR","SI","CS","BR","BG","CE","TR","HL","BN","LW","IB","DK","IN","VG","OX")
+    fake_prevalence<-as.numeric(seq(0.01,100,length.out = 15))
     fake_data<-data.frame(fake_sites,fake_prevalence)
     
     y_axis<-c(0.01,0.03,0.05,0.1,0.3,0.5,1,3,5,10,30,50,100)
-    x_text_y<-par("usr")[4]-1.994
+    x_text_y<-par("usr")[4]-1.9928
   }
   
   #pdf(file = paste("log_prevalence_by_site_plots/log_prevalence_by_site_", sub(" ","_",virus_titles[i]), ".pdf", sep = ""),width = 12,height = 6)
   #setting margins for plotting 
-  par(mar = c(10.1,6.1, 2.6, 2.1), # change the margins
+  par(mar = c(10.1,6.1,4.6, 2.1), # change the margins
       lwd = 1.7,# increase the line thickness
       cex.axis = 1.3, # increase default axis label size
       cex.lab = 1.4)
@@ -367,7 +377,7 @@ for (i in 1:length(multi_virus_data)) {
   #adding y axis label
   mtext(side = 2, line = 4, "Virus prevalence (%)", cex = 1.6,padj = 0.6)
   #adding x axis
-  vec<-seq(par("usr")[1]+0.8,par("usr")[2]-0.448,length.out = 16)
+  vec<-seq(par("usr")[1]+0.8,par("usr")[2]-0.6,length.out = 15)
   axis(1, at = vec,
        tick = FALSE,
        labels = FALSE)
@@ -376,7 +386,7 @@ for (i in 1:length(multi_virus_data)) {
   xtext_cols[prev_index]<-"grey60"
   text(x = vec,
        y = x_text_y,
-       labels = c("Almen","Almere De Vaarten","Asten","Bergumermeer","Leiden Hortus Botanicus","Lelystad","Maastricht","Nijmegen Berg en Dal","Overdinkel","Reusel","Rotterdam museumpark","Utrecht Eendenkooi","Utrecht Griend","Utrecht Vleuterweide","Wageningen Campus","Zwarte Meer"),
+       labels = c("Almen","Almere De Vaarten","Asten","Bergumermeer","Leiden Hortus Botanicus","Lelystad","Maastricht","Nijmegen Berg en Dal","Overdinkel","Reusel","Rotterdam museumpark","Utrecht Haarzuilens","Utrecht Vleuterweide","Wageningen Campus","Zwarte Meer"),
        ## Rotate the labels by 35 degrees.
        xpd = NA,
        srt = 30,
@@ -386,12 +396,12 @@ for (i in 1:length(multi_virus_data)) {
   #adding x axis label
   mtext(side = 1, line = 8,"Sites", cex = 1.6)
   #Setting the amount of space to leave before each bar
-  bar_spacing<-c(-0.22,rep.int(0.27,15)) 
+  bar_spacing<-c(-0.22,rep.int(0.27,14)) 
   
   #making colour vector fr bars
-  xbar_cols<-rep.int("#009E73",16)
+  xbar_cols<-rep.int("#009E73",15)
   xbar_cols[prev_index]<-rgb(199/255,199/255,199/255,0.4)#alter alpha [4] here to show low value bars
-  xborder_cols<-rep.int("black",16)
+  xborder_cols<-rep.int("black",15)
   xborder_cols[prev_index]<-rgb(199/255,199/255,199/255,0.4)#alter alpha [4] here to show low value bar borders
   #plotting actual data on to the plot
   barplot(data$prevalence~data$Location,add=TRUE,yaxt ="n",xaxt="n",log = "y",col=xbar_cols,xpd=TRUE,border=xborder_cols,space=bar_spacing)
@@ -401,7 +411,19 @@ for (i in 1:length(multi_virus_data)) {
   #space=bar_spacing
   arrows(barCenters,data$lower_bound,barCenters,data$upper_bound, lwd=1.7, angle=90, code=3,length = 0.1,col = xtext_cols)
   #adding text to plot with virus name 
-  mtext(side=3,line=1,paste(virus_titles[i]),cex=1.8,padj = 0.25)
+  mtext(side=3,line=3,paste(virus_titles[i]),cex=1.8,padj = 0.25)
+  
+  ##adding text to plot with sample size above bars 
+  text(x = vec,
+       y = par("usr")[4]+160.25,
+       labels = paste(ss_dat),
+       xpd = NA,
+       cex = 1.5,
+       col = xtext_cols)
+  text(x = vec[1]-0.95,y = par("usr")[4]+160.25,
+       labels = "n =",col = "black",
+       xpd = NA,
+       cex = 1.5)
   
   #dev.off()
 }
